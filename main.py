@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from aiogram import Bot, Dispatcher, Router, types
+from aiogram import Bot, Dispatcher
 
 from app.base import router
 from app.database import get_db
