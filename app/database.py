@@ -33,6 +33,9 @@ class Database:
         await self.conn.execute('CREATE TABLE IF NOT EXISTS tasks('
                                 'id INTEGER PRIMARY KEY AUTOINCREMENT,'
                                 'name TEXT NOT NULL ,'
+                                'description TEXT,'
+                                'deadline INTEGER,'
+                                'created_at INTEGER,'
                                 'list_id INTEGER NOT NULL,'
                                 'FOREIGN KEY (list_id) REFERENCES lists(id) ON DELETE CASCADE)')
 
@@ -50,9 +53,10 @@ class Database:
         return cursor.lastrowid
 
 
-    async def create_task(self, list_id: int, task_name: str) -> None:
-        await self.conn.execute('INSERT INTO tasks (name, list_id) VALUES (?, ?)', (task_name, list_id,))
+    async def create_task(self, list_id: int, task_name: str) -> int:
+        cursor = await self.conn.execute('INSERT INTO tasks (name, list_id) VALUES (?, ?)', (task_name, list_id,))
         await self.conn.commit()
+        return cursor.lastrowid
 
 
     async def get_user_by_tg_id(self, user_tg_id: int) -> Tuple:
