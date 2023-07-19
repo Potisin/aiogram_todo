@@ -24,7 +24,7 @@ def create_lists_or_tasks_markup(source: str, lists_name: List) -> types.InlineK
     """Создает клавиатуру, кнопками являются названия Списков или Задач"""
     builder = InlineKeyboardBuilder()
     for name in lists_name:
-        builder.add(types.InlineKeyboardButton(text=name[0], callback_data=f'{source}: {name[0]}'))
+        builder.add(types.InlineKeyboardButton(text=name[0], callback_data=f'{source}: {name}'))
     if source == 'lists':
         builder.adjust(2)
     return builder.as_markup()

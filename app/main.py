@@ -4,20 +4,14 @@ import logging
 from aiogram import Bot, Dispatcher
 
 from app.base import router
-from app.database import get_db
 from config import TG_BOT_TOKEN
-
-db = get_db()
 
 
 async def on_startup():
-    await db.connect()
-    await db.create_tables()
     logging.info('Bot started')
 
 
 async def on_shutdown():
-    await db.close()
     logging.info('Bot stopped')
 
 
