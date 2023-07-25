@@ -24,7 +24,7 @@ class Database:
                                 'username TEXT NOT NULL,'
                                 'tg_id INTEGER NOT NULL UNIQUE)')
 
-        await self.conn.execute('CREATE TABLE IF NOT EXISTS lists('
+        await self.conn.execute('CREATE TABLE IF NOT EXISTS catalogs('
                                 'id INTEGER PRIMARY KEY AUTOINCREMENT,'
                                 'name TEXT DEFAULT "Без названия",'
                                 'user_tg_id INTEGER NOT NULL,'
@@ -36,8 +36,8 @@ class Database:
                                 'description TEXT,'
                                 'deadline INTEGER,'
                                 'created_at INTEGER,'
-                                'list_id INTEGER NOT NULL,'
-                                'FOREIGN KEY (list_id) REFERENCES lists(id) ON DELETE CASCADE)')
+                                'catalog_id INTEGER NOT NULL,'
+                                'FOREIGN KEY (catalog_id) REFERENCES catalogs(id) ON DELETE CASCADE)')
 
         await self.conn.commit()
 
@@ -47,14 +47,14 @@ class Database:
             await self.conn.execute('INSERT INTO users (tg_id, username) VALUES (?, ?)', (user_tg_id, username))
         await self.conn.commit()
 
-    async def create_list(self, user_tg_id: int, list_name: str) -> int:
-        cursor = await self.conn.execute('INSERT INTO lists (name, user_tg_id) VALUES (?, ?)', (list_name, user_tg_id,))
+    async def create_catalog(self, user_tg_id: int, catalog_name: str) -> int:
+        cursor = await self.conn.execute('INSERT INTO catalogs (name, user_tg_id) VALUES (?, ?)', (catalog_name, user_tg_id,))
         await self.conn.commit()
         return cursor.lastrowid
 
 
-    async def create_task(self, list_id: int, task_name: str) -> int:
-        cursor = await self.conn.execute('INSERT INTO tasks (name, list_id) VALUES (?, ?)', (task_name, list_id,))
+    async def create_task(self, catalog_id: int, task_name: str) -> int:
+        cursor = await self.conn.execute('INSERT INTO tasks (name, catalog_id) VALUES (?, ?)', (task_name, catalog_id,))
         await self.conn.commit()
         return cursor.lastrowid
 
@@ -64,16 +64,16 @@ class Database:
         user = await cursor.fetchone()
         return user
 
-    async def get_task_list_names(self, user_tg_id: int) -> List[Tuple]:
-        cursor = await self.conn.execute('SELECT name FROM lists WHERE user_tg_id = ?', (user_tg_id,))
-        task_lists_names = await cursor.fetchall()
-        return task_lists_names
+    async def get_catalog_names(self, user_tg_id: int) -> List[Tuple]:
+        cursor = await self.conn.execute('SELECT name FROM catalogs WHERE user_tg_id = ?', (user_tg_id,))
+        catalogs_names = await cursor.fetchall()
+        return catalogs_names
 
-    async def get_tasks(self, user_tg_id: int, list_name: str) -> List[Tuple]:
-        cursor = await self.conn.execute('SELECT id FROM lists WHERE (user_tg_id, name) = (?, ?)',
-                                         (user_tg_id, list_name))
-        list_id = await cursor.fetchone()
-        cursor = await self.conn.execute('SELECT name FROM tasks WHERE list_id = ?', (int(list_id[0]),))
+    async def get_tasks(self, user_tg_id: int, catalog_name: str) -> List[Tuple]:
+        cursor = await self.conn.execute('SELECT id FROM catalogs WHERE (user_tg_id, name) = (?, ?)',
+                                         (user_tg_id, catalog_name))
+        catalog_id = await cursor.fetchone()
+        cursor = await self.conn.execute('SELECT name FROM tasks WHERE catalog_id = ?', (int(catalog_id[0]),))
         task_names = await cursor.fetchall()
         return task_names
 

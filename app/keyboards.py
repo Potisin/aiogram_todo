@@ -20,13 +20,17 @@ deadline_or_skip_markup = types.ReplyKeyboardMarkup(
               [types.KeyboardButton(text='Пропустить')]], resize_keyboard=True)
 
 
-def create_lists_or_tasks_markup(source: str, lists_name: List) -> types.InlineKeyboardMarkup:
+def create_catalogs_or_tasks_markup(source: str, object_names: List,
+                                 catalog_id: int | None = None) -> types.InlineKeyboardMarkup:
     """Создает клавиатуру, кнопками являются названия Списков или Задач"""
     builder = InlineKeyboardBuilder()
-    for name in lists_name:
-        builder.add(types.InlineKeyboardButton(text=name[0], callback_data=f'{source}: {name}'))
-    if source == 'lists':
+    for name in object_names:
+        builder.add(types.InlineKeyboardButton(text=name, callback_data=f'{source}: {name}: {catalog_id}'))
+    if source == 'catalogs':
         builder.adjust(2)
+    else:
+        builder.row(types.InlineKeyboardButton(text='Создать задачу', callback_data=f'Создать задачу'))
+
     return builder.as_markup()
 
 

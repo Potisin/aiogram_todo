@@ -3,7 +3,7 @@ import logging
 
 from aiogram import Bot, Dispatcher
 
-from app.base import router
+from routers.base import router
 from config import TG_BOT_TOKEN
 
 
