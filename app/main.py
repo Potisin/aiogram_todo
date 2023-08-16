@@ -3,8 +3,8 @@ import logging
 
 from aiogram import Bot, Dispatcher
 
-from routers.base import router
 from config import TG_BOT_TOKEN
+from routers.base import router
 
 
 async def on_startup():

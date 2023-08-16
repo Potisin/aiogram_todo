@@ -3,35 +3,26 @@ from typing import Optional
 from aiogram import Router
 from aiogram.filters import Text
 from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import StatesGroup, State
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery, Message, ReplyKeyboardRemove
 from sqlalchemy import select
 
 from database import async_session
 from keyboards import skip_markup, deadline_or_skip_markup
 from models import Task
-from routers.catalog import CreatingCatalog
-from utils import get_tasks_by_catalog
+from routers.catalog import show_catalog_detail
+from states import CreatingTask, CreatingCatalog
 
 router = Router()
 
 
-class CreatingTask(StatesGroup):
-    request_task_name = State()
-    request_task_description = State()
-    request_task_deadline = State()
-    create_task = State()
-    show_tasks_by_catalog = State()
-
-
-@router.callback_query(Text('Создать задачу'))
-@router.message(CreatingCatalog.created_catalog) #  если создаем задачу после создания списка
+@router.callback_query(Text(startswith='Создать задачу'))
+@router.message(CreatingCatalog.created_catalog)  # если создаем задачу после создания списка
 async def request_task_name(callback: Optional[CallbackQuery], state: Optional[FSMContext] = None) -> None:
-    await callback.message.answer('Введите название задачи')
-    data = await state.get_data()
-    await state.clear()
+    data = callback.data.split('&')
     await state.set_state(CreatingTask.request_task_name)
-    await state.set_data(data)
+    if len(data) > 1:
+        await state.set_data({'catalog_id': int(data[1])})
+    await callback.message.answer('Введите название задачи')
 
 
 @router.message(CreatingTask.request_task_name)
@@ -54,17 +45,15 @@ async def create_task(message: Message, state: FSMContext) -> None:
     data = await state.get_data()
     if message.text != 'Пропустить':
         data['deadline'] = message.text
-    catalog_name = data.pop('catalog_name')
     async with async_session() as session:
         new_task = Task(**data)
         session.add(new_task)
         await session.commit()
-    task_names_markup = await get_tasks_by_catalog(catalog_name, message.from_user.id)
-    await message.answer('Выберите задачу или создайте новую', reply_markup=task_names_markup)
-    await state.clear()
+    await message.answer('Задача успешно создана!✅', reply_markup=ReplyKeyboardRemove())
+    await show_catalog_detail(message, state)
 
 
-@router.callback_query(Text(startswith="tasks: "))  # передается название задачи
+@router.callback_query(Text(startswith="tasks"))  # передается название задачи
 async def task_detail(callback: CallbackQuery) -> None:
     task_name = callback.data.split(': ')[1]
     catalog_id = callback.data.split(': ')[2]
