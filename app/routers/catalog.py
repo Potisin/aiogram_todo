@@ -28,15 +28,15 @@ async def show_catalogs(callback: CallbackQuery) -> None:
 
 @router.callback_query(Text(startswith="catalogs"))
 async def show_catalog_detail(callback_or_message: CallbackQuery | Message,
-                              state: FSMContext = None) -> None:
-
+                              state: FSMContext = None, catalog_id: int = None) -> None:
     """Функция вызывается или по кнопке <Название списка> в чате, или после создания задачи. От этого зависит,
     что придет на вход: или CallbackQuery, или Message """
 
     source = 'tasks'
     try:
         message = callback_or_message.message
-        catalog_id = int(callback_or_message.data.split('&')[1])
+        if not catalog_id:
+            catalog_id = int(callback_or_message.data.split('_')[1])
     except AttributeError:
         message = callback_or_message
         data = await state.get_data()
@@ -47,7 +47,10 @@ async def show_catalog_detail(callback_or_message: CallbackQuery | Message,
         result = await session.scalars(stmt)
         tasks = result.all()
     task_names_markup = create_catalogs_or_tasks_markup(source, tasks, catalog_id)
-    await message.answer('Выберите задачу или создайте новую', reply_markup=task_names_markup)
+    if not tasks:
+        await message.answer('У вас пока нет задач😔 Создайте новую.', reply_markup=task_names_markup)
+    else:
+        await message.answer('Выберите задачу или создайте новую', reply_markup=task_names_markup)
 
 
 @router.callback_query(Text('Создать список'))
@@ -59,7 +62,10 @@ async def request_catalog_name(callback: CallbackQuery, state: FSMContext) -> No
 
 @router.message(CreatingCatalog.request_catalog_name)
 async def create_catalog(message: Message, state: FSMContext) -> None:
-    markup = create_simple_inline_markup(['Создать задачу', 'Мои списки', 'Отмена'], 1)
+    buttons = {'Создать задачу': 'Создать задачу',
+               'Мои списки': 'Мои списки',
+               'Отмена': 'Отмена'}
+    reply_markup = create_simple_inline_markup(buttons, 1)
     catalog_name = message.text
     async with async_session() as session:
         new_catalog = Catalog(name=catalog_name, user_tg_id=message.from_user.id)
@@ -67,6 +73,6 @@ async def create_catalog(message: Message, state: FSMContext) -> None:
         await session.flush()
         await session.refresh(new_catalog)
         await session.commit()
-    await message.answer('Отлично, список создан! Теперь вы можете создать задачу.', reply_markup=markup)
+    await message.answer('Отлично, список создан! Теперь вы можете создать задачу.', reply_markup=reply_markup)
     await state.set_data({'catalog_id': new_catalog.id})
     await state.set_state(CreatingCatalog.created_catalog)

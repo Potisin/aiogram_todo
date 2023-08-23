@@ -1,5 +1,3 @@
-from typing import List
-
 from aiogram import types
 from aiogram.types import WebAppInfo
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
@@ -26,24 +24,28 @@ def create_catalogs_or_tasks_markup(source: str, objects,
     builder = InlineKeyboardBuilder()
     for obj in objects:
         builder.add(
-            types.InlineKeyboardButton(text=obj.name, callback_data=f'{source}&{obj.id}'))
+            types.InlineKeyboardButton(text=obj.name, callback_data=f'{source}_{obj.id}'))
     if source == 'catalogs':
         builder.adjust(2)
     else:
-        builder.row(types.InlineKeyboardButton(text='Создать задачу', callback_data=f'Создать задачу&{catalog_id}'))
+        builder.row(types.InlineKeyboardButton(text='Создать задачу', callback_data=f'Создать задачу_{catalog_id}'))
+        builder.row(types.InlineKeyboardButton(text='Удалить список', callback_data=f'delete_catalog_{catalog_id}'))
 
     return builder.as_markup()
 
 
-def create_simple_inline_markup(buttons: List, *rows: int):
+def create_simple_inline_markup(buttons: dict,
+                                *rows: int) -> types.InlineKeyboardMarkup:
+    """ Создает инлайн клавиатуру из переданных в списке названий кнопок и
+    размером рядов, переданных цифровыми значениями"""
     builder = InlineKeyboardBuilder()
-    for button in buttons:
-        builder.add(types.InlineKeyboardButton(text=button, callback_data=button))
+    for text, callback_data in buttons.items():
+        builder.add(types.InlineKeyboardButton(text=text, callback_data=callback_data))
     builder.adjust(*rows)
     return builder.as_markup()
 
 
-def create_reply_markup(buttons: List) -> types.ReplyKeyboardMarkup:
+def create_reply_markup(buttons: list) -> types.ReplyKeyboardMarkup:
     builder = ReplyKeyboardBuilder()
     for button in buttons:
         builder.add(types.KeyboardButton(text=button))
@@ -51,3 +53,5 @@ def create_reply_markup(buttons: List) -> types.ReplyKeyboardMarkup:
     markup = builder.as_markup()
     markup.resize_keyboard = True
     return markup
+
+# def task_detail_markup

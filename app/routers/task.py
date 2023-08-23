@@ -1,5 +1,3 @@
-from typing import Optional
-
 from aiogram import Router
 from aiogram.filters import Text
 from aiogram.fsm.context import FSMContext
@@ -7,7 +5,7 @@ from aiogram.types import CallbackQuery, Message, ReplyKeyboardRemove
 from sqlalchemy import select
 
 from database import async_session
-from keyboards import skip_markup, deadline_or_skip_markup
+from keyboards import skip_markup, deadline_or_skip_markup, create_simple_inline_markup
 from models import Task
 from routers.catalog import show_catalog_detail
 from states import CreatingTask, CreatingCatalog
@@ -17,8 +15,8 @@ router = Router()
 
 @router.callback_query(Text(startswith='Создать задачу'))
 @router.message(CreatingCatalog.created_catalog)  # если создаем задачу после создания списка
-async def request_task_name(callback: Optional[CallbackQuery], state: Optional[FSMContext] = None) -> None:
-    data = callback.data.split('&')
+async def request_task_name(callback: CallbackQuery, state: FSMContext) -> None:
+    data = callback.data.split('_')
     await state.set_state(CreatingTask.request_task_name)
     if len(data) > 1:
         await state.set_data({'catalog_id': int(data[1])})
@@ -55,11 +53,17 @@ async def create_task(message: Message, state: FSMContext) -> None:
 
 @router.callback_query(Text(startswith="tasks"))  # передается название задачи
 async def task_detail(callback: CallbackQuery) -> None:
-    task_name = callback.data.split(': ')[1]
-    catalog_id = callback.data.split(': ')[2]
-    async with async_session as session:
-        stmt = select(Task).filter_by(name=task_name, catalog_id=catalog_id)
+    task_id = int(callback.data.split('_')[1])
+    async with async_session() as session:
+        stmt = select(Task).filter_by(id=task_id)
         task = await session.scalar(stmt)
-    await callback.message.answer(text=f'b><i>{task.name}</i></b>\n\n'
+    buttons = {'Изменить задачу': f'edit_task_{task_id}',
+               'Удалить задачу': f'delete_task_{task_id}',
+               'К списку задач': f'catalogs_{task.catalog_id}'}
+    reply_markup = create_simple_inline_markup(buttons, 1)
+    await callback.message.answer(text=f'<b><i>{task.name}</i></b>\n\n'
                                        f'{task.description}\n\n'
-                                       f'Дедлайн: {task.deadline}')
+                                       f'Дедлайн: {task.deadline}',
+                                  reply_markup=reply_markup)
+
+
