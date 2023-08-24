@@ -13,13 +13,13 @@ from states import CreatingTask, CreatingCatalog
 router = Router()
 
 
-@router.callback_query(Text(startswith='Создать задачу'))
+@router.callback_query(Text(startswith='create_task'))
 @router.message(CreatingCatalog.created_catalog)  # если создаем задачу после создания списка
 async def request_task_name(callback: CallbackQuery, state: FSMContext) -> None:
     data = callback.data.split('_')
     await state.set_state(CreatingTask.request_task_name)
     if len(data) > 1:
-        await state.set_data({'catalog_id': int(data[1])})
+        await state.set_data({'catalog_id': int(data[2])})
     await callback.message.answer('Введите название задачи')
 
 
@@ -57,13 +57,12 @@ async def task_detail(callback: CallbackQuery) -> None:
     async with async_session() as session:
         stmt = select(Task).filter_by(id=task_id)
         task = await session.scalar(stmt)
-    buttons = {'Изменить задачу': f'edit_task_{task_id}',
-               'Удалить задачу': f'delete_task_{task_id}',
+    buttons = {'Удалить задачу': f'delete_task_{task_id}',
                'К списку задач': f'catalogs_{task.catalog_id}'}
     reply_markup = create_simple_inline_markup(buttons, 1)
     await callback.message.answer(text=f'<b><i>{task.name}</i></b>\n\n'
-                                       f'{task.description}\n\n'
-                                       f'Дедлайн: {task.deadline}',
+                                       f'{task.description if task.description else ""}\n\n'
+                                       f'Дедлайн: {task.deadline if task.deadline else "не установлен"}',
                                   reply_markup=reply_markup)
 
 

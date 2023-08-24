@@ -30,8 +30,8 @@ ACTIONS_MAP = {
 
 @router.message(Command(commands='start', ignore_case=True))
 async def start(message: Message) -> None:
-    buttons = {'Мои списки': 'Мои списки',
-               'Создать список': 'Создать список'}
+    buttons = {'Мои списки': 'my_catalogs',
+               'Создать список': 'create_catalog'}
     reply_markup = create_simple_inline_markup(buttons, 2)
     await message.answer('Привет! Я твой бот-ассистент. '
                          'Я помогу тебе не забыть о всех твоих задачах и делах ☺', reply_markup=reply_markup)

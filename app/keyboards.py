@@ -28,7 +28,7 @@ def create_catalogs_or_tasks_markup(source: str, objects,
     if source == 'catalogs':
         builder.adjust(2)
     else:
-        builder.row(types.InlineKeyboardButton(text='Создать задачу', callback_data=f'Создать задачу_{catalog_id}'))
+        builder.row(types.InlineKeyboardButton(text='Создать задачу', callback_data=f'create_task_{catalog_id}'))
         builder.row(types.InlineKeyboardButton(text='Удалить список', callback_data=f'delete_catalog_{catalog_id}'))
 
     return builder.as_markup()
@@ -54,4 +54,3 @@ def create_reply_markup(buttons: list) -> types.ReplyKeyboardMarkup:
     markup.resize_keyboard = True
     return markup
 
-# def task_detail_markup
